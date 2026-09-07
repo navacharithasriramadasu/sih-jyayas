@@ -14,9 +14,6 @@ async function main() {
       full_name: 'Ramesh (Farmer)',
       role: Role.farmer,
       is_verified: true,
-      address: 'Hyderabad, Telangana',
-      latitude: 17.3850,
-      longitude: 78.4867,
     },
   });
 
@@ -28,9 +25,6 @@ async function main() {
       full_name: 'Metro Bulk Buyers',
       role: Role.bulk_buyer,
       is_verified: true,
-      address: 'Secunderabad, Telangana',
-      latitude: 17.4399,
-      longitude: 78.4983,
     },
   });
 
@@ -44,9 +38,10 @@ async function main() {
       available_quantity_kg: 500,
       expected_price_per_kg: 25.5,
       harvest_date: new Date(),
-      quality_grade: QualityGrade.A,
-      location_lat: 17.3850,
-      location_lng: 78.4867,
+      quality_grade: QualityGrade.gradeA,
+      pickup_latitude: 17.3850,
+      pickup_longitude: 78.4867,
+      pickup_address: 'Hyderabad, Telangana',
       ai_pricing: {
         price_corridor: { lower_bound: 20, upper_bound: 30, recommended_price_per_kg: 26 },
         explainability: { demand_trend: 'high', confidence_score: 0.95 }
@@ -60,12 +55,16 @@ async function main() {
       buyer_id: buyer.id,
       crop_name: 'Tomato',
       required_quantity_kg: 200,
-      max_price_per_kg: 28.0,
-      delivery_required: true,
-      quality_grade_required: QualityGrade.A,
+      target_price_min: 20.0,
+      target_price_max: 28.0,
+      required_by_date: new Date(),
+      quality_grade_required: QualityGrade.gradeA,
       status: 'open',
-      location_lat: 17.4399,
-      location_lng: 78.4983,
+      delivery_city: 'Secunderabad',
+      delivery_state: 'Telangana',
+      delivery_latitude: 17.4399,
+      delivery_longitude: 78.4983,
+      delivery_address: 'Secunderabad Market',
     }
   });
 
