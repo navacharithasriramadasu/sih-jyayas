@@ -3,6 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { EventsGateway } from '../events/events.gateway';
 import { AiService } from '../ai/ai.service';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class ProduceService {
@@ -10,6 +12,7 @@ export class ProduceService {
     private prisma: PrismaService,
     private eventsGateway: EventsGateway,
     private aiService: AiService,
+    private httpService: HttpService,
   ) {}
 
   async create(farmerId: string, data: Omit<Prisma.ProduceInventoryCreateInput, 'farmer'>) {
@@ -37,9 +40,29 @@ export class ProduceService {
     } catch (e) {
       console.error('Failed to generate embedding for produce:', e);
     }
+    // 4. Fetch AI Dynamic Price Recommendation
+    let aiPricingData = null;
+    try {
+      // The Python microservice must be running on port 8000
+      const response = await firstValueFrom(
+        this.httpService.get(`http://localhost:8000/api/v1/ai/price-recommendation`, {
+          params: {
+            crop: data.crop_name,
+            quantity_kg: Number(data.total_quantity_kg),
+            mandi_price: Number(data.expected_price_per_kg)
+          }
+        })
+      );
+      aiPricingData = response.data?.data;
+    } catch (e) {
+      console.warn('AI Python microservice unreachable or failed. Falling back to default.', e.message);
+    }
     
     // Broadcast instantly to all connected buyers!
-    this.eventsGateway.broadcastProduceListing(produce);
+    this.eventsGateway.server.emit('produce.created', {
+      ...produce,
+      ai_pricing: aiPricingData
+    });
     
     return produce;
   }

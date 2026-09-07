@@ -22,7 +22,14 @@ export class AuthService {
     }
   }
 
-  async sendOtp(phone_number: string, role: Role) {
+  async sendOtp(phone_number: string, role: Role, is_login?: boolean) {
+    // If attempting to login, verify user exists first
+    if (is_login) {
+      const existingUser = await this.usersService.findByPhone(phone_number);
+      if (!existingUser) {
+        throw new BadRequestException('User not found. Please register first.');
+      }
+    }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
     const sessionId = uuidv4();
@@ -33,8 +40,8 @@ export class AuthService {
     if (this.twilioClient) {
       try {
         await this.twilioClient.messages.create({
-          body: `Your AgriConnect verification code is: ${otp}. It is valid for 5 minutes.`,
-          from: process.env.TWILIO_PHONE_NUMBER || '+15017122661', // Replace with active Twilio number
+          body: 'sms_appointment_reminders', // Mandated by Twilio trial restrictions
+          from: process.env.TWILIO_PHONE_NUMBER || '+17372508034',
           to: phone_number,
         });
         console.log(`Successfully sent SMS to ${phone_number}`);

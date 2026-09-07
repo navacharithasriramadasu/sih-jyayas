@@ -10,6 +10,7 @@ import { MatchingModule } from './matching/matching.module';
 import { BullModule } from '@nestjs/bullmq';
 import { EventsModule } from './events/events.module';
 import { AiModule } from './ai/ai.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AiModule } from './ai/ai.module';
     MatchingModule,
     EventsModule,
     AiModule,
+    HttpModule,
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST || 'localhost',
