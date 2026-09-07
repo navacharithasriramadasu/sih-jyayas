@@ -42,10 +42,6 @@ async function main() {
       pickup_latitude: 17.3850,
       pickup_longitude: 78.4867,
       pickup_address: 'Hyderabad, Telangana',
-      ai_pricing: {
-        price_corridor: { lower_bound: 20, upper_bound: 30, recommended_price_per_kg: 26 },
-        explainability: { demand_trend: 'high', confidence_score: 0.95 }
-      }
     }
   });
 
