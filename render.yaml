@@ -8,6 +8,10 @@ services:
     buildCommand: npm install --include=dev && npx prisma generate && npm run build
     startCommand: npm run start:prod
     envVars:
+      - key: PRISMA_CLIENT_ENGINE_TYPE
+        value: binary
+      - key: PRISMA_CLI_QUERY_ENGINE_TYPE
+        value: binary
       - key: NODE_ENV
         value: production
       - key: PORT
