@@ -31,4 +31,11 @@ export class UsersController {
   // remove(@Param('id') id: string) {
   //   return this.usersService.remove(+id);
   // }
+
+  @Patch('api/v1/users/profile')
+  async updateProfile(
+    @Body() body: { farmer_id: string; full_name: string }
+  ) {
+    return this.usersService.updateProfile(body.farmer_id, body.full_name);
+  }
 }

@@ -23,4 +23,11 @@ export class UsersService {
       where: { id },
     });
   }
+
+  async updateProfile(id: string, full_name: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { full_name },
+    });
+  }
 }
