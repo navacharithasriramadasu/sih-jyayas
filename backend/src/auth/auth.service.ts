@@ -4,18 +4,18 @@ import { UsersService } from '../users/users.service';
 import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { Role } from '@prisma/client';
-import * as twilio from 'twilio';
+import { Twilio } from 'twilio';
 
 @Injectable()
 export class AuthService {
-  private twilioClient: twilio.Twilio;
+  private twilioClient: Twilio;
 
   constructor(
     private prisma: PrismaService,
     private usersService: UsersService,
   ) {
     if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-      this.twilioClient = twilio(
+      this.twilioClient = new Twilio(
         process.env.TWILIO_ACCOUNT_SID,
         process.env.TWILIO_AUTH_TOKEN,
       );
