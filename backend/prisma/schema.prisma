@@ -150,6 +150,7 @@ model ProduceInventory {
   pickup_longitude      Decimal       @db.Decimal(11, 8)
   pickup_address        String        @db.Text
   status                ProduceStatus @default(available)
+  embedding             Unsupported("vector(384)")?
   created_at            DateTime      @default(now())
 
   farmer                User          @relation(fields: [farmer_id], references: [id])
@@ -183,6 +184,7 @@ model BuyerRequirement {
   delivery_longitude     Decimal           @db.Decimal(11, 8)
   delivery_address       String            @db.Text
   status                 RequirementStatus @default(open)
+  embedding              Unsupported("vector(384)")?
   created_at             DateTime          @default(now())
 
   buyer                  User              @relation(fields: [buyer_id], references: [id])

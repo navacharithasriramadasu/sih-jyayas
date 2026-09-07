@@ -4,11 +4,14 @@ services:
     env: node
     plan: free
     rootDir: backend
+    # Install dev dependencies to ensure Nest CLI is available, generate Prisma Client, and build the TS code
     buildCommand: npm install --include=dev && npx prisma generate && npm run build
     startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: DATABASE_URL
         sync: false
       - key: REDIS_HOST

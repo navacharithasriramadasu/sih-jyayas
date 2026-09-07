@@ -6,6 +6,7 @@ async function main() {
   console.log('Enabling Postgres Extensions...');
   await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS cube;`);
   await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS earthdistance;`);
+  await prisma.$executeRawUnsafe(`CREATE EXTENSION IF NOT EXISTS vector;`);
   console.log('Extensions Enabled Successfully!');
 }
 
