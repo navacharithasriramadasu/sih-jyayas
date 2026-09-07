@@ -1,0 +1,387 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  farmer
+  fpo
+  bulk_buyer
+  consumer
+  driver
+  admin
+}
+
+enum UserStatus {
+  active
+  suspended
+  pending_kyc
+}
+
+model User {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone_number       String    @unique @db.VarChar(15)
+  full_name          String    @db.VarChar(100)
+  role               Role
+  email              String?   @unique @db.VarChar(120)
+  avatar_url         String?   @db.VarChar(500)
+  preferred_language String    @default("en") @db.VarChar(10)
+  is_verified        Boolean   @default(false)
+  status             UserStatus @default(active)
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @default(now()) @updatedAt
+
+  farmer_profile     FarmerProfile?
+  bank_accounts      BankAccount[]
+  fpos_coordinated   Fpo[]
+  produce_inventory  ProduceInventory[]
+  buyer_requirements BuyerRequirement[]
+  match_contributors MatchContributor[]
+  orders_bought      Order[]
+  settlements        Settlement[]
+  trips_driven       LogisticsTrip[]
+  trip_stops         TripStop[]
+}
+
+model OtpSession {
+  id             String   @id @db.Uuid
+  phone_number   String   @db.VarChar(15)
+  otp_hash       String   @db.VarChar(255)
+  attempts_count Int      @default(0)
+  expires_at     DateTime
+  is_used        Boolean  @default(false)
+}
+
+model FarmerProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  user_id           String   @unique @db.Uuid
+  fpo_id            String?  @db.Uuid
+  village           String   @db.VarChar(100)
+  mandal            String   @db.VarChar(100)
+  district          String   @db.VarChar(100)
+  state             String   @db.VarChar(100)
+  pincode           String   @db.VarChar(10)
+  latitude          Decimal  @db.Decimal(10, 8)
+  longitude         Decimal  @db.Decimal(11, 8)
+  land_size_acres   Decimal  @db.Decimal(6, 2)
+  primary_crops     String[]
+  soil_type         String?  @db.VarChar(50)
+  irrigation_type   String?  @db.VarChar(50)
+  pm_kisan_id       String?  @db.VarChar(50)
+
+  user              User     @relation(fields: [user_id], references: [id])
+  fpo               Fpo?     @relation(fields: [fpo_id], references: [id])
+}
+
+model BankAccount {
+  id                       String   @id @default(uuid()) @db.Uuid
+  user_id                  String   @db.Uuid
+  account_holder_name      String   @db.VarChar(120)
+  account_number_encrypted String   @db.VarChar(255)
+  ifsc_code                String   @db.VarChar(15)
+  bank_name                String   @db.VarChar(100)
+  branch_name              String?  @db.VarChar(100)
+  upi_id                   String?  @db.VarChar(100)
+  is_jan_dhan_account      Boolean  @default(true)
+  is_primary               Boolean  @default(true)
+  is_verified              Boolean  @default(false)
+
+  user                     User     @relation(fields: [user_id], references: [id])
+  settlements              Settlement[]
+}
+
+model Fpo {
+  id                       String   @id @default(uuid()) @db.Uuid
+  fpo_name                 String   @db.VarChar(150)
+  registration_number      String   @unique @db.VarChar(100)
+  coordinator_user_id      String   @db.Uuid
+  contact_phone            String   @db.VarChar(15)
+  operating_districts      String[]
+  total_farmer_members     Int      @default(0)
+  aggregation_center_name  String   @db.VarChar(150)
+  hub_latitude             Decimal  @db.Decimal(10, 8)
+  hub_longitude            Decimal  @db.Decimal(11, 8)
+  cold_storage_capacity_mt Decimal  @default(0.0) @db.Decimal(8, 2)
+  rating                   Decimal  @default(4.8) @db.Decimal(3, 2)
+
+  coordinator              User     @relation(fields: [coordinator_user_id], references: [id])
+  farmer_profiles          FarmerProfile[]
+  produce_inventory        ProduceInventory[]
+  supply_matches           SupplyMatch[]
+  orders                   Order[]
+  consumer_products        ConsumerProduct[]
+}
+
+enum QualityGrade {
+  gradeA
+  gradeB
+  gradeC
+  pending
+}
+
+enum ProduceStatus {
+  available
+  locked_in_match
+  sold
+  expired
+}
+
+model ProduceInventory {
+  id                    String        @id @default(uuid()) @db.Uuid
+  farmer_id             String        @db.Uuid
+  fpo_id                String?       @db.Uuid
+  crop_name             String        @db.VarChar(100)
+  variety               String        @db.VarChar(100)
+  total_quantity_kg     Decimal       @db.Decimal(10, 2)
+  available_quantity_kg Decimal       @db.Decimal(10, 2)
+  min_order_quantity_kg Decimal       @default(50.0) @db.Decimal(10, 2)
+  expected_price_per_kg Decimal       @db.Decimal(8, 2)
+  harvest_date          DateTime      @db.Date
+  shelf_life_days       Int           @default(7)
+  quality_grade         QualityGrade  @default(gradeA)
+  quality_score         Decimal       @default(85.0) @db.Decimal(5, 2)
+  confidence_score      Decimal       @default(90.0) @db.Decimal(5, 2)
+  images                String[]
+  pickup_latitude       Decimal       @db.Decimal(10, 8)
+  pickup_longitude      Decimal       @db.Decimal(11, 8)
+  pickup_address        String        @db.Text
+  status                ProduceStatus @default(available)
+  created_at            DateTime      @default(now())
+
+  farmer                User          @relation(fields: [farmer_id], references: [id])
+  fpo                   Fpo?          @relation(fields: [fpo_id], references: [id])
+  match_contributors    MatchContributor[]
+
+  @@index([crop_name, status])
+}
+
+enum RequirementStatus {
+  open
+  matching
+  fulfilled
+  closed
+}
+
+model BuyerRequirement {
+  id                     String            @id @default(uuid()) @db.Uuid
+  buyer_id               String            @db.Uuid
+  crop_name              String            @db.VarChar(100)
+  variety                String?           @db.VarChar(100)
+  required_quantity_kg   Decimal           @db.Decimal(12, 2)
+  fulfilled_quantity_kg  Decimal           @default(0.0) @db.Decimal(12, 2)
+  target_price_min       Decimal           @db.Decimal(8, 2)
+  target_price_max       Decimal           @db.Decimal(8, 2)
+  required_by_date       DateTime          @db.Date
+  quality_grade_required QualityGrade      @default(gradeA)
+  delivery_city          String            @db.VarChar(100)
+  delivery_state         String            @db.VarChar(100)
+  delivery_latitude      Decimal           @db.Decimal(10, 8)
+  delivery_longitude     Decimal           @db.Decimal(11, 8)
+  delivery_address       String            @db.Text
+  status                 RequirementStatus @default(open)
+  created_at             DateTime          @default(now())
+
+  buyer                  User              @relation(fields: [buyer_id], references: [id])
+  supply_matches         SupplyMatch[]
+
+  @@index([crop_name, status])
+}
+
+enum MatchStatus {
+  proposed
+  accepted_by_buyer
+  order_placed
+  rejected
+}
+
+model SupplyMatch {
+  id                    String      @id @default(uuid()) @db.Uuid
+  requirement_id        String      @db.Uuid
+  crop_name             String      @db.VarChar(100)
+  required_quantity_kg  Decimal     @db.Decimal(12, 2)
+  matched_quantity_kg   Decimal     @db.Decimal(12, 2)
+  match_score_percent   Decimal     @db.Decimal(5, 2)
+  overall_quality_score Decimal     @db.Decimal(5, 2)
+  confidence_score      Decimal     @db.Decimal(5, 2)
+  is_fully_fulfilled    Boolean     @default(true)
+  total_estimated_value Decimal     @db.Decimal(12, 2)
+  aggregation_hub_id    String?     @db.Uuid
+  status                MatchStatus @default(proposed)
+  created_at            DateTime    @default(now())
+
+  requirement           BuyerRequirement @relation(fields: [requirement_id], references: [id])
+  aggregation_hub       Fpo?             @relation(fields: [aggregation_hub_id], references: [id])
+  contributors          MatchContributor[]
+  orders                Order[]
+}
+
+model MatchContributor {
+  id                    String  @id @default(uuid()) @db.Uuid
+  match_id              String  @db.Uuid
+  produce_id            String  @db.Uuid
+  farmer_id             String  @db.Uuid
+  allocated_quantity_kg Decimal @db.Decimal(10, 2)
+  agreed_price_per_kg   Decimal @db.Decimal(8, 2)
+  payout_amount         Decimal @db.Decimal(10, 2)
+  pickup_location       String  @db.Text
+  distance_to_hub_km    Decimal @db.Decimal(6, 2)
+
+  match                 SupplyMatch      @relation(fields: [match_id], references: [id], onDelete: Cascade)
+  produce               ProduceInventory @relation(fields: [produce_id], references: [id])
+  farmer                User             @relation(fields: [farmer_id], references: [id])
+}
+
+enum OrderType {
+  wholesale_lot
+  consumer_retail
+}
+
+enum EscrowStatus {
+  held_in_escrow
+  partially_released
+  released
+  refunded
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  in_transit
+  at_mandi_gate
+  completed
+  cancelled
+}
+
+model Order {
+  id                      String       @id @default(uuid()) @db.Uuid
+  order_number            String       @unique @db.VarChar(30)
+  order_type              OrderType
+  buyer_id                String       @db.Uuid
+  match_id                String?      @db.Uuid
+  fpo_id                  String?      @db.Uuid
+  total_items_count       Int          @default(1)
+  total_weight_kg         Decimal      @db.Decimal(10, 2)
+  subtotal_amount         Decimal      @db.Decimal(12, 2)
+  logistics_fee           Decimal      @default(0.0) @db.Decimal(8, 2)
+  platform_fee            Decimal      @default(0.0) @db.Decimal(8, 2)
+  total_amount            Decimal      @db.Decimal(12, 2)
+  escrow_status           EscrowStatus @default(held_in_escrow)
+  order_status            OrderStatus  @default(confirmed)
+  delivery_address        String       @db.Text
+  delivery_latitude       Decimal      @db.Decimal(10, 8)
+  delivery_longitude      Decimal      @db.Decimal(11, 8)
+  estimated_delivery_time DateTime?
+  created_at              DateTime     @default(now())
+
+  buyer                   User          @relation(fields: [buyer_id], references: [id])
+  match                   SupplyMatch?  @relation(fields: [match_id], references: [id])
+  fpo                     Fpo?          @relation(fields: [fpo_id], references: [id])
+  settlements             Settlement[]
+  trips                   LogisticsTrip[]
+}
+
+enum TripStatus {
+  scheduled
+  pickup_in_progress
+  all_collected
+  delivering
+  completed
+}
+
+model LogisticsTrip {
+  id                     String     @id @default(uuid()) @db.Uuid
+  order_id               String     @db.Uuid
+  driver_user_id         String?    @db.Uuid
+  vehicle_number         String     @db.VarChar(20)
+  vehicle_type           String     @default("1.2 Ton Mini-Truck") @db.VarChar(50)
+  max_capacity_kg        Decimal    @default(1200.0) @db.Decimal(8, 2)
+  total_distance_km      Decimal    @db.Decimal(8, 2)
+  estimated_duration_min Int
+  current_latitude       Decimal?   @db.Decimal(10, 8)
+  current_longitude      Decimal?   @db.Decimal(11, 8)
+  trip_status            TripStatus @default(scheduled)
+  started_at             DateTime?
+  completed_at           DateTime?
+
+  order                  Order      @relation(fields: [order_id], references: [id])
+  driver                 User?      @relation(fields: [driver_user_id], references: [id])
+  stops                  TripStop[]
+}
+
+enum StopType {
+  farmer_pickup
+  fpo_hub
+  mandi_delivery
+  consumer_drop
+}
+
+model TripStop {
+  id             String    @id @default(uuid()) @db.Uuid
+  trip_id        String    @db.Uuid
+  sequence_index Int
+  stop_type      StopType
+  farmer_id      String?   @db.Uuid
+  location_name  String    @db.VarChar(150)
+  latitude       Decimal   @db.Decimal(10, 8)
+  longitude      Decimal   @db.Decimal(11, 8)
+  quantity_kg    Decimal   @db.Decimal(10, 2)
+  otp_code       String    @db.VarChar(6)
+  is_completed   Boolean   @default(false)
+  completed_at   DateTime?
+
+  trip           LogisticsTrip @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  farmer         User?         @relation(fields: [farmer_id], references: [id])
+}
+
+model ConsumerProduct {
+  id                 String   @id @default(uuid()) @db.Uuid
+  fpo_id             String   @db.Uuid
+  product_name       String   @db.VarChar(100)
+  crop_category      String   @db.VarChar(50)
+  unit               String   @default("kg") @db.VarChar(20)
+  price_per_unit     Decimal  @db.Decimal(8, 2)
+  market_mrp         Decimal  @db.Decimal(8, 2)
+  savings_percentage Int      @default(15)
+  stock_quantity     Decimal  @db.Decimal(10, 2)
+  quality_grade      String   @default("Grade A+") @db.VarChar(20)
+  farm_origin        String   @db.VarChar(150)
+  images             String[]
+  is_active          Boolean  @default(true)
+
+  fpo                Fpo      @relation(fields: [fpo_id], references: [id])
+}
+
+enum SettlementType {
+  instant_mandi_gate
+  scheduled_neft
+  upi_instant
+}
+
+enum SettlementStatus {
+  pending
+  processing
+  credited
+  failed
+}
+
+model Settlement {
+  id                    String           @id @default(uuid()) @db.Uuid
+  order_id              String           @db.Uuid
+  farmer_id             String           @db.Uuid
+  bank_account_id       String           @db.Uuid
+  payout_amount         Decimal          @db.Decimal(10, 2)
+  settlement_type       SettlementType   @default(instant_mandi_gate)
+  bank_reference_number String?          @unique @db.VarChar(100)
+  status                SettlementStatus @default(pending)
+  triggered_by_event    String           @default("mandi_gate_scan") @db.VarChar(100)
+  credited_at           DateTime?
+  failure_reason        String?          @db.Text
+
+  order                 Order            @relation(fields: [order_id], references: [id])
+  farmer                User             @relation(fields: [farmer_id], references: [id])
+  bank_account          BankAccount      @relation(fields: [bank_account_id], references: [id])
+}
