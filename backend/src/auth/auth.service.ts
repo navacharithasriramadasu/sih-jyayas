@@ -1,8 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
-import * as crypto from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
 import { Role } from '@prisma/client';
 import { Twilio } from 'twilio';
 
@@ -14,92 +12,97 @@ export class AuthService {
     private prisma: PrismaService,
     private usersService: UsersService,
   ) {
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    if (
+      process.env.TWILIO_ACCOUNT_SID &&
+      process.env.TWILIO_AUTH_TOKEN &&
+      process.env.TWILIO_VERIFY_SERVICE_SID
+    ) {
       this.twilioClient = new Twilio(
         process.env.TWILIO_ACCOUNT_SID,
         process.env.TWILIO_AUTH_TOKEN,
       );
+    } else {
+      console.warn('Twilio credentials (including VERIFY_SERVICE_SID) are not fully configured.');
     }
   }
 
+  // Format phone number to E.164 if necessary. Assuming frontend sends +91...
+  private formatPhoneNumber(phone: string): string {
+    if (!phone.startsWith('+')) {
+      return `+${phone}`;
+    }
+    return phone;
+  }
+
   async sendOtp(phone_number: string, role: Role, is_login?: boolean) {
+    const formattedPhone = this.formatPhoneNumber(phone_number);
+
     // If attempting to login, verify user exists first
     if (is_login) {
-      const existingUser = await this.usersService.findByPhone(phone_number);
+      const existingUser = await this.usersService.findByPhone(formattedPhone);
       if (!existingUser) {
         throw new BadRequestException('User not found. Please register first.');
       }
     }
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
-    const sessionId = uuidv4();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
 
-    console.log(`[DEV ONLY] OTP for ${phone_number} is ${otp}`);
-
-    if (this.twilioClient) {
-      try {
-        await this.twilioClient.messages.create({
-          body: 'sms_2fa', // Mandated by Twilio trial restrictions
-          from: process.env.TWILIO_PHONE_NUMBER || '+17372508034',
-          to: phone_number,
-        });
-        console.log(`Successfully sent SMS to ${phone_number}`);
-      } catch (error) {
-        console.error('Failed to send Twilio SMS:', error.message);
-      }
+    if (!this.twilioClient || !process.env.TWILIO_VERIFY_SERVICE_SID) {
+      console.log(`[DEV ONLY] Twilio Verify not configured. Mocking OTP send for ${formattedPhone}`);
+      return {
+        success: true,
+        message: `OTP mocked successfully for ${formattedPhone}`,
+        session_id: 'twilio-verify-mock',
+        expires_in_seconds: 300,
+      };
     }
 
-    await this.prisma.otpSession.create({
-      data: {
-        id: sessionId,
-        phone_number,
-        otp_hash: otpHash,
-        expires_at: expiresAt,
-      },
-    });
+    try {
+      const verification = await this.twilioClient.verify.v2
+        .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+        .verifications.create({ to: formattedPhone, channel: 'sms' });
 
-    return {
-      success: true,
-      message: `OTP sent successfully to ${phone_number}`,
-      session_id: sessionId,
-      expires_in_seconds: 300,
-    };
+      console.log(`Twilio Verify request status for ${formattedPhone}: ${verification.status}`);
+      
+      return {
+        success: true,
+        message: `OTP sent successfully to ${formattedPhone}`,
+        session_id: 'twilio-verify',
+        expires_in_seconds: 300,
+      };
+    } catch (error) {
+      console.error('Failed to send Twilio Verify SMS:', error.message);
+      throw new BadRequestException('Failed to send OTP via SMS provider.');
+    }
   }
 
   async verifyOtp(session_id: string, phone_number: string, otp: string) {
-    const session = await this.prisma.otpSession.findUnique({
-      where: { id: session_id },
-    });
+    const formattedPhone = this.formatPhoneNumber(phone_number);
 
-    if (!session || session.phone_number !== phone_number) {
-      throw new BadRequestException('Invalid session');
-    }
-    if (session.is_used) {
-      throw new BadRequestException('OTP already used');
-    }
-    if (new Date() > session.expires_at) {
-      throw new BadRequestException('OTP expired');
+    if (this.twilioClient && process.env.TWILIO_VERIFY_SERVICE_SID) {
+      try {
+        const verificationCheck = await this.twilioClient.verify.v2
+          .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+          .verificationChecks.create({ to: formattedPhone, code: otp });
+
+        console.log(`Twilio verification check for ${formattedPhone}: ${verificationCheck.status}`);
+
+        if (verificationCheck.status !== 'approved') {
+          throw new BadRequestException('Invalid OTP or OTP expired');
+        }
+      } catch (error) {
+        console.error('Twilio Verify Check Failed:', error.message);
+        throw new BadRequestException('Invalid OTP or OTP expired');
+      }
+    } else {
+      // Dev mode fallback
+      if (otp !== '123456') {
+        throw new BadRequestException('Invalid DEV OTP (use 123456)');
+      }
     }
 
-    const inputHash = crypto.createHash('sha256').update(otp).digest('hex');
-    if (session.otp_hash !== inputHash) {
-      await this.prisma.otpSession.update({
-        where: { id: session_id },
-        data: { attempts_count: { increment: 1 } },
-      });
-      throw new BadRequestException('Invalid OTP');
-    }
-
-    await this.prisma.otpSession.update({
-      where: { id: session_id },
-      data: { is_used: true },
-    });
-
-    let user = await this.usersService.findByPhone(phone_number);
+    let user = await this.usersService.findByPhone(formattedPhone);
     if (!user) {
       user = await this.usersService.createUser({
-        phone_number,
+        phone_number: formattedPhone,
         full_name: 'New User',
         role: Role.farmer,
         is_verified: true,
