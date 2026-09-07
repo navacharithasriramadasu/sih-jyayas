@@ -40,7 +40,7 @@ export class AuthService {
     if (this.twilioClient) {
       try {
         await this.twilioClient.messages.create({
-          body: 'sms_appointment_reminders', // Mandated by Twilio trial restrictions
+          body: 'sms_2fa', // Mandated by Twilio trial restrictions
           from: process.env.TWILIO_PHONE_NUMBER || '+17372508034',
           to: phone_number,
         });
