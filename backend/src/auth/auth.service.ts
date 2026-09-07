@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
+import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private usersService: UsersService,
+    private jwtService: JwtService,
   ) {
     console.log('[AUTH] Operating in Hackathon Mock Mode (OTP: 123456)');
   }
@@ -65,10 +67,12 @@ export class AuthService {
       });
     }
 
+    const payload = { sub: user.id, phone: user.phone_number, role: user.role };
+
     return {
       success: true,
-      access_token: 'dummy-jwt-access-token',
-      refresh_token: 'dummy-jwt-refresh-token',
+      access_token: this.jwtService.sign(payload),
+      refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }),
       user,
     };
   }
