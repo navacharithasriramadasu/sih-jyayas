@@ -20,31 +20,35 @@ import os
 import urllib.request
 import zipfile
 
-# 1. Download Real-World Dataset (ICAR/APMC Sample)
+# 1. Download Real Dataset (PyTorch Hymenoptera as a proxy for MVP testing)
 data_dir = "./dataset"
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
-    print("Downloading Real-World Mandi Dataset...")
-    # Using a placeholder URL for the hackathon. Replace with your actual Roboflow/S3 link!
-    url = "https://raw.githubusercontent.com/navacharithasriramadasu/sih-jyayas/master/mock_dataset.zip"
+    print("Downloading Real Dataset from PyTorch servers...")
+    url = "https://download.pytorch.org/tutorial/hymenoptera_data.zip"
     zip_path = os.path.join(data_dir, "dataset.zip")
+    
+    import urllib.request
+    import zipfile
+    import shutil
+    
     try:
         urllib.request.urlretrieve(url, zip_path)
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(data_dir)
-        print("Dataset extracted!")
+            
+        print("Dataset downloaded! Restructuring into Grade A, B, C folders...")
+        os.makedirs(os.path.join(data_dir, 'train'), exist_ok=True)
+        
+        # We map Ants to Grade A, Bees to Grade B for testing
+        shutil.move(os.path.join(data_dir, 'hymenoptera_data', 'train', 'ants'), os.path.join(data_dir, 'train', 'grade_A'))
+        shutil.move(os.path.join(data_dir, 'hymenoptera_data', 'train', 'bees'), os.path.join(data_dir, 'train', 'grade_B'))
+        
+        # Duplicate B to C just to fulfill the 3-class requirement for the neural network
+        shutil.copytree(os.path.join(data_dir, 'train', 'grade_B'), os.path.join(data_dir, 'train', 'grade_C'))
+        print("Dataset ready!")
     except Exception as e:
-        print(f"Failed to download dataset. Generating mock images for testing... {e}")
-        from PIL import Image
-        import numpy as np
-        for grade in ['grade_A', 'grade_B', 'grade_C']:
-            grade_dir = os.path.join(data_dir, 'train', grade)
-            os.makedirs(grade_dir, exist_ok=True)
-            for i in range(10):
-                img_array = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
-                img = Image.fromarray(img_array)
-                img.save(os.path.join(grade_dir, f'mock_{i}.jpg'))
-        print("Mock dataset generated successfully at ./dataset/train")
+        print(f"Download failed. Error: {e}")
 
 # 2. Define the Architecture
 class ProduceGradingModel(nn.Module):
