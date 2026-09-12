@@ -31,9 +31,18 @@ if not os.path.exists(data_dir):
     import urllib.request
     import zipfile
     import shutil
+    import requests
     
     try:
-        urllib.request.urlretrieve(url, zip_path)
+        # STREAMING DOWNLOAD: Downloads 1GB+ datasets in 8KB chunks to prevent RAM crashes
+        print(f"Starting chunked download of massive dataset from {url}...")
+        with requests.get(url, stream=True) as r:
+            r.raise_for_status()
+            with open(zip_path, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+                    
+        print("Download complete! Extracting 50,000+ images to disk...")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall(data_dir)
             
