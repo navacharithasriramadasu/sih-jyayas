@@ -7,7 +7,7 @@ This guide explains how the mobile frontend (React Native/Expo) should interact 
 ## 1. Important: Base URL
 Because you are building a mobile application, **you must use an Absolute URL** for all API calls. Relative paths (like `/api/v1/...`) will fail because mobile apps do not run on a domain.
 
-- **Production API**: `https://<YOUR-RENDER-BACKEND-URL>.onrender.com`
+- **Production API**: `https://agriconnect-api-fiz5.onrender.com`
 - **Production**: `https://agriconnect-api-fiz5.onrender.com`
 
 > [!WARNING]

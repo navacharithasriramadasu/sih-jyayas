@@ -3,7 +3,7 @@
 This document outlines all the critical REST APIs and endpoints currently available in the NestJS Backend. Frontend developers (Flutter/React) should use this guide to connect the UI.
 
 ## 📡 Base URL
-**Production API:** `https://<YOUR-RENDER-BACKEND-URL>.onrender.com/api/v1`
+**Production API:** `https://agriconnect-api-fiz5.onrender.com/api/v1`
 *(Note: Ensure you are prefixing endpoints with `/api/v1` if configured, or just `/` depending on your `main.ts` global prefix).*
 
 ---
@@ -95,7 +95,7 @@ This document outlines all the critical REST APIs and endpoints currently availa
 ## 🎙️ 5. Voice AI Assistant (Python Microservice)
 *The Python FastAPI server that handles voice.*
 
-**Base URL:** `https://<YOUR-RENDER-AI-URL>.onrender.com/api/v1`
+**Base URL:** `https://agriconnect-voice-ai.onrender.com/api/v1`
 
 ### Chat (Voice to Voice)
 `POST /voice/chat`

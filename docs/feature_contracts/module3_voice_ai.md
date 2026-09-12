@@ -12,7 +12,7 @@ To bypass the literacy barrier for rural Indian farmers, AgriConnect features an
 ## 🔌 API Specification
 
 ### 1. Send Audio to AI (Chat)
-**Endpoint:** `POST https://<YOUR-RENDER-AI-URL>.onrender.com/api/v1/voice/chat?lang=en`
+**Endpoint:** `POST https://agriconnect-voice-ai.onrender.com/api/v1/voice/chat?lang=en`
 *(Set `lang=hi` for Hindi, `lang=te` for Telugu, `lang=mr` for Marathi, `lang=gu` for Gujarati)*
 **Headers:** `Authorization: Bearer <TOKEN>`
 
@@ -35,7 +35,7 @@ The response is NOT a JSON object. It is a direct **Audio File Stream** (`audio/
 ## 📊 Market Insights (Demand Graphs)
 If you are building the Dashboard UI for the farmers/buyers and want to show them visual graphs, use this NestJS endpoint:
 
-**Endpoint:** `GET https://<YOUR-RENDER-BACKEND-URL>.onrender.com/api/v1/market-insights/historical-demand?crop=tomato`
+**Endpoint:** `GET https://agriconnect-api-fiz5.onrender.com/api/v1/market-insights/historical-demand?crop=tomato`
 *(No auth required for MVP)*
 
 **Success Response:**
