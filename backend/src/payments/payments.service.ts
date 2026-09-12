@@ -1,9 +1,18 @@
 import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import Razorpay from 'razorpay';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  private razorpay: any;
+
+  constructor(private prisma: PrismaService) {
+    this.razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_fallback',
+      key_secret: process.env.RAZORPAY_KEY_SECRET || 'fallback_secret',
+    });
+  }
 
   /**
    * Called when Buyer confirms the order.
@@ -162,6 +171,90 @@ export class PaymentsService {
       };
     } catch (error) {
       throw new InternalServerErrorException('Failed to raise dispute.');
+    }
+  }
+
+  /**
+   * Create a Razorpay Order and PaymentTransaction record
+   */
+  async createRazorpayOrder(userId: string, amount: number, currency: string = 'INR', paymentType: any = 'full_100', internalOrderId?: string) {
+    try {
+      const options = {
+        amount: Math.round(amount * 100), // amount in smallest currency unit (paise)
+        currency,
+        receipt: `rcpt_${Date.now()}`
+      };
+
+      const razorpayOrder = await this.razorpay.orders.create(options);
+
+      // Create tracking transaction
+      const transaction = await this.prisma.paymentTransaction.create({
+        data: {
+          user_id: userId,
+          order_id: internalOrderId,
+          amount: amount,
+          currency: currency,
+          gateway: 'razorpay',
+          gateway_order_id: razorpayOrder.id,
+          status: 'pending',
+          payment_type: paymentType
+        }
+      });
+
+      return {
+        success: true,
+        razorpay_order_id: razorpayOrder.id,
+        transaction_id: transaction.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency
+      };
+    } catch (error: any) {
+      throw new InternalServerErrorException(error.message || 'Failed to create Razorpay order');
+    }
+  }
+
+  /**
+   * Verify the Razorpay Signature
+   */
+  async verifyRazorpayPayment(razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string) {
+    try {
+      const secret = process.env.RAZORPAY_KEY_SECRET || 'fallback_secret';
+      
+      const generatedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+        .digest('hex');
+
+      if (generatedSignature !== razorpaySignature) {
+        throw new BadRequestException('Invalid payment signature. Verification failed.');
+      }
+
+      // Update the transaction
+      const transaction = await this.prisma.paymentTransaction.update({
+        where: { gateway_order_id: razorpayOrderId },
+        data: {
+          gateway_payment_id: razorpayPaymentId,
+          signature: razorpaySignature,
+          status: 'verified'
+        }
+      });
+
+      // Handle escrow locks if this was an advance payment
+      if (transaction.order_id && transaction.payment_type === 'advance_20') {
+        await this.prisma.order.update({
+          where: { id: transaction.order_id },
+          data: { escrow_status: 'held_in_escrow' }
+        });
+      }
+
+      return {
+        success: true,
+        message: 'Payment verified successfully.',
+        transaction_id: transaction.id
+      };
+    } catch (error: any) {
+      if (error instanceof BadRequestException) throw error;
+      throw new InternalServerErrorException(error.message || 'Payment verification failed');
     }
   }
 }

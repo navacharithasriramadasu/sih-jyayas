@@ -54,6 +54,7 @@ model User {
   consumer_order_items ConsumerOrderItem[]
   delivery_orders      ConsumerOrder[]     @relation("DeliveryPartnerToOrders")
   delivery_partner     DeliveryPartner?
+  payment_transactions PaymentTransaction[]
 }
 
 model OtpSession {
@@ -292,6 +293,7 @@ model Order {
   fpo         Fpo?            @relation(fields: [fpo_id], references: [id])
   settlements Settlement[]
   trips       LogisticsTrip[]
+  payment_transactions PaymentTransaction[]
 }
 
 enum TripStatus {
@@ -738,4 +740,35 @@ model DriverPayoutLedger {
 
   driver DeliveryPartner @relation(fields: [driver_id], references: [id])
   trip   DeliveryTrip?   @relation(fields: [trip_id], references: [id])
+}
+
+enum PaymentTransactionStatus {
+  pending
+  verified
+  failed
+}
+
+enum PaymentTransactionType {
+  advance_20
+  final_80
+  full_100
+}
+
+model PaymentTransaction {
+  id                  String                   @id @default(uuid()) @db.Uuid
+  order_id            String?                  @db.Uuid
+  user_id             String                   @db.Uuid
+  amount              Decimal                  @db.Decimal(10, 2)
+  currency            String                   @default("INR") @db.VarChar(10)
+  gateway             String                   @default("razorpay") @db.VarChar(50)
+  gateway_order_id    String                   @unique @db.VarChar(100)
+  gateway_payment_id  String?                  @unique @db.VarChar(100)
+  signature           String?                  @db.VarChar(255)
+  status              PaymentTransactionStatus @default(pending)
+  payment_type        PaymentTransactionType   @default(full_100)
+  created_at          DateTime                 @default(now())
+  updated_at          DateTime                 @default(now()) @updatedAt
+
+  user                User                     @relation(fields: [user_id], references: [id])
+  order               Order?                   @relation(fields: [order_id], references: [id])
 }

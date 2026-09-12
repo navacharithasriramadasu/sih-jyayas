@@ -25,4 +25,24 @@ export class PaymentsController {
   ) {
     return this.paymentsService.raiseDispute(orderId, reason);
   }
+
+  @Post('razorpay/create-order')
+  async createRazorpayOrder(
+    @Body('userId') userId: string,
+    @Body('amount') amount: number,
+    @Body('currency') currency?: string,
+    @Body('paymentType') paymentType?: string,
+    @Body('internalOrderId') internalOrderId?: string,
+  ) {
+    return this.paymentsService.createRazorpayOrder(userId, amount, currency, paymentType, internalOrderId);
+  }
+
+  @Post('razorpay/verify')
+  async verifyRazorpayPayment(
+    @Body('razorpay_order_id') razorpayOrderId: string,
+    @Body('razorpay_payment_id') razorpayPaymentId: string,
+    @Body('razorpay_signature') razorpaySignature: string,
+  ) {
+    return this.paymentsService.verifyRazorpayPayment(razorpayOrderId, razorpayPaymentId, razorpaySignature);
+  }
 }
