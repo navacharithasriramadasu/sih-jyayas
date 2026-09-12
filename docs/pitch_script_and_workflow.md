@@ -7,6 +7,49 @@
 ## 🔄 1. The High-Level Architecture Workflow
 *When explaining the architecture to the judges, point to your slides and walk them through this exact lifecycle of a single crop.*
 
+```mermaid
+graph TD
+    subgraph "1. User Interfaces"
+        F["👨‍🌾 Farmer (Voice App)"]
+        B["🏢 Bulk Buyer (Web Dashboard)"]
+        D["🚚 FPO Driver (Mobile App)"]
+    end
+
+    subgraph "2. Python AI Microservice"
+        V["🎙️ Vosk Multilingual STT"]
+        NLP["🧠 Intent Classifier (SVC)"]
+        F -->|"Speaks (Hindi/Telugu)"| V
+        V -->|"Translates to English"| NLP
+    end
+
+    subgraph "3. NestJS Core Backend"
+        API["⚙️ Main REST API"]
+        M["🗺️ Geospatial Matching"]
+        E["🔒 Escrow Trust System"]
+        NLP -->|"POST /produce"| API
+        B -->|"Search & Pay"| M
+        API --> M
+        M -->|"Match Found"| E
+    end
+
+    subgraph "4. Infrastructure"
+        DB[("🗄️ PostgreSQL")]
+        R[("⚡ Redis (OTP Cache)")]
+        AG["📊 Agmarknet API"]
+        OSRM["🛣️ OSRM Engine"]
+        
+        API <--> DB
+        API <--> R
+        API <--> AG
+        API --> OSRM
+    end
+
+    E -->|"Calculate Route"| OSRM
+    OSRM -->|"Dispatch Truck"| D
+    D -->|"Submit Delivery OTP"| E
+    E -->|"Release Payment"| F
+```
+
 1. **The Voice Input:** A farmer in rural Maharashtra presses a button and says, *"I want to sell 100 quintals of onions."*
 2. **The AI Translation Bridge:** The Python Microservice dynamically loads the Marathi Vosk Model into RAM, transcribes the Marathi audio, translates it to English, and uses an SVC Intent Classifier to trigger the "Sell Produce" API.
 3. **The Farm-Gate Listing:** The crops are officially listed on the marketplace. The database cross-references the official Agmarknet API and recommends the farmer price it at ₹22/kg based on a predicted demand surge.
