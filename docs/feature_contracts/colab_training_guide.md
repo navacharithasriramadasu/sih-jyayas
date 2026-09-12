@@ -57,7 +57,18 @@ if not os.path.exists(data_dir):
         shutil.copytree(os.path.join(data_dir, 'train', 'grade_B'), os.path.join(data_dir, 'train', 'grade_C'))
         print("Dataset ready!")
     except Exception as e:
-        print(f"Download failed. Error: {e}")
+        print(f"Download failed. Generating mock images for testing... Error: {e}")
+        from PIL import Image
+        import numpy as np
+        
+        for grade in ['grade_A', 'grade_B', 'grade_C']:
+            grade_dir = os.path.join(data_dir, 'train', grade)
+            os.makedirs(grade_dir, exist_ok=True)
+            for i in range(10):
+                img_array = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
+                img = Image.fromarray(img_array)
+                img.save(os.path.join(grade_dir, f'mock_{i}.jpg'))
+        print("Mock dataset generated successfully at ./dataset/train")
 
 # 2. Define the Architecture
 class ProduceGradingModel(nn.Module):
