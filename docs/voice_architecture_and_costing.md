@@ -64,3 +64,13 @@ AgriConnect was designed with **Profitable Unit Economics** in mind. By avoiding
 | **Logistics & Routing** | Self-Hosted OSRM (Docker) | **$0 (Included in EC2)** | Bypassing Google Maps API ($5 per 1,000 routes) saves the startup thousands of dollars a month. OSRM runs natively on our existing NestJS server. |
 | **SMS Notifications** | Twilio OTP System | **$30 - $50** | Twilio charges ~$0.005 per SMS. This is our highest variable cost, mitigated by caching user sessions. |
 | **Total Estimated Cost** | | **$75 - $140 / month** | *Massively scalable to 10k+ users with high profit margins.* |
+
+---
+
+## 🎯 5. UX Strategy: Why Voice AI is Exclusively for Farmers
+AgriConnect intentionally limits the Voice AI interface to the **Farmer Persona** for specific UX and business reasons:
+
+1. **Solving the Core Literacy Barrier:** The primary goal of the Voice AI is to bridge the digital divide for rural farmers who may struggle with typing, navigating complex dropdown menus, or reading text.
+2. **Digital Literacy of Other Personas:** Bulk Buyers (restaurants, supermarkets) and FPO Managers are B2B entities. They are assumed to be digitally literate and possess smartphones/computers. 
+3. **The Needs of Enterprise Procurement:** Bulk buyers require detailed visual dashboards. They need to view market price graphs, compare multiple crop listings, negotiate bulk quantities, and handle Escrow payments. Voice interfaces are too slow and linear for complex enterprise procurement.
+4. **Hackathon Defense Strategy:** If asked why a buyer cannot buy crops via voice, the answer is: *"We engineered the Voice AI specifically as an accessibility tool for rural farmers. B2B Bulk Buyers and Logistics Partners use our standard visual UI because voice is inefficient for complex supply-chain management."*
