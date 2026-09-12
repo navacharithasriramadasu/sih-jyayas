@@ -11,6 +11,9 @@ import { BullModule } from '@nestjs/bullmq';
 import { EventsModule } from './events/events.module';
 import { AiModule } from './ai/ai.module';
 import { HttpModule } from '@nestjs/axios';
+import { PaymentsModule } from './payments/payments.module';
+import { MarketInsightsModule } from './market-insights/market-insights.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -29,6 +32,9 @@ import { HttpModule } from '@nestjs/axios';
         port: parseInt(process.env.REDIS_PORT || '6379') || 6379,
       },
     }),
+    PaymentsModule,
+    MarketInsightsModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -387,3 +387,17 @@ model Settlement {
   farmer                User             @relation(fields: [farmer_id], references: [id])
   bank_account          BankAccount      @relation(fields: [bank_account_id], references: [id])
 }
+
+model DailyMandiPrice {
+  id          String   @id @default(uuid()) @db.Uuid
+  crop_name   String   @db.VarChar(100)
+  state       String   @db.VarChar(100)
+  mandi_name  String   @db.VarChar(150)
+  min_price   Decimal  @db.Decimal(8, 2)
+  max_price   Decimal  @db.Decimal(8, 2)
+  modal_price Decimal  @db.Decimal(8, 2)
+  recorded_at DateTime @db.Date
+  created_at  DateTime @default(now())
+
+  @@index([crop_name, recorded_at])
+}
