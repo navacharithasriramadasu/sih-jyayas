@@ -18,8 +18,9 @@ export class AuthController {
       session_id: string;
       phone_number: string;
       otp: string;
+      full_name?: string;
     },
   ) {
-    return this.authService.verifyOtp(body.session_id, body.phone_number, body.otp);
+    return this.authService.verifyOtp(body.session_id, body.phone_number, body.otp, body.full_name);
   }
 }

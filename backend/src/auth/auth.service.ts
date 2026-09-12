@@ -44,7 +44,7 @@ export class AuthService {
     };
   }
 
-  async verifyOtp(session_id: string, phone_number: string, otp: string) {
+  async verifyOtp(session_id: string, phone_number: string, otp: string, full_name?: string) {
     const formattedPhone = this.formatPhoneNumber(phone_number);
 
     // [MOCK MODE] Hardcoded OTP verification
@@ -56,7 +56,7 @@ export class AuthService {
     if (!user) {
       user = await this.usersService.createUser({
         phone_number: formattedPhone,
-        full_name: 'New User',
+        full_name: full_name || 'New User',
         role: Role.farmer,
         is_verified: true,
       });
