@@ -16,9 +16,36 @@ export class ProduceService {
   ) {}
 
   async create(farmerId: string, data: Omit<Prisma.ProduceInventoryCreateInput, 'farmer'>) {
+    let qualityGrade = Prisma.QualityGrade.pending;
+    let qualityScore = 85.0; // default fallback
+
+    // --- CV Module 4 Integration ---
+    if (data.images && data.images.length >= 3) {
+      try {
+        const cvResponse = await firstValueFrom(
+          this.httpService.post(`http://localhost:8001/api/v1/cv/grade`, {
+            images: data.images,
+            crop_type: "perishable" // Simplification for MVP
+          })
+        );
+        const cvData = cvResponse.data;
+        if (cvData && cvData.grade) {
+          qualityGrade = cvData.grade === 'A' ? Prisma.QualityGrade.gradeA : 
+                         cvData.grade === 'B' ? Prisma.QualityGrade.gradeB : 
+                         Prisma.QualityGrade.gradeC;
+          // E.g., 100 - (100 * (average_defect / 100))
+          qualityScore = Math.max(0, 100 - (cvData.average_defect_percentage * 2));
+        }
+      } catch (e) {
+        console.warn('Failed to reach Python CV Engine. Proceeding with pending grade.', e.message);
+      }
+    }
+
     const produce = await this.prisma.produceInventory.create({
       data: {
         ...data,
+        quality_grade: qualityGrade,
+        quality_score: qualityScore,
         farmer: { connect: { id: farmerId } },
       },
     });

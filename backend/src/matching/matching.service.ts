@@ -93,11 +93,17 @@ export class MatchingService {
           const avgConfidence = totalConfidence / quantity_kg;
           const avgDistance = totalDistanceKm / currentMatchContributors.length;
           
-          const distanceScore = Math.max(0, 40 - avgDistance / 5);
-          const priceScore = Math.max(0, 40 - (avgPrice / 2));
-          const qualityScore = (avgQuality / 100) * 20;
+          // --- 40:40:20 Matching Engine Logic ---
+          // 1. Quality (40% Weight): Driven heavily by the Python CV AI Grade
+          const qualityScoreWeighted = (avgQuality / 100) * 40;
+          
+          // 2. Price (40% Weight): Compares against target market price
+          const priceScoreWeighted = Math.max(0, 40 - (avgPrice / 2));
+          
+          // 3. Logistics & Distance (20% Weight): Distance penalization
+          const distanceScoreWeighted = Math.max(0, 20 - (avgDistance / 5));
 
-          const matchScorePercent = Math.min(100, distanceScore + priceScore + qualityScore);
+          const matchScorePercent = Math.min(100, qualityScoreWeighted + priceScoreWeighted + distanceScoreWeighted);
 
           matches.push({
             match_id: `MATCH-${Math.floor(1000 + Math.random() * 9000)}`,
