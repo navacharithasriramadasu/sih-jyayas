@@ -5,7 +5,7 @@ This guide is designed for the Frontend Team (Flutter/React Native) to integrate
 ## 🌍 Base URLs
 - **Production API URL:** `https://agriconnect-api-fiz5.onrender.com`
 - **Voice AI Engine URL:** `https://agriconnect-voice-ai.onrender.com`
-- **Local Dev API URL:** `http://localhost:3000`
+
 
 > [!IMPORTANT]
 > **Authentication:** Almost all of these endpoints require a valid JWT token. You must pass it in the Headers as:

@@ -59,6 +59,8 @@ export class DeliveryService {
 
   async verifyChecklist(userId: string, tripId: string, data: any) {
     const partner = await this.prisma.deliveryPartner.findUnique({ where: { user_id: userId } });
+    if (!partner) throw new BadRequestException('Partner not found');
+    
     await this.prisma.deliveryChecklist.upsert({
       where: { trip_id: tripId },
       update: { ...data },
@@ -69,6 +71,8 @@ export class DeliveryService {
 
   async verifyOtp(userId: string, tripId: string, otp: string) {
     const partner = await this.prisma.deliveryPartner.findUnique({ where: { user_id: userId } });
+    if (!partner) throw new BadRequestException('Partner not found');
+
     const trip = await this.prisma.deliveryTrip.findUnique({ where: { id: tripId } });
     
     if (!trip || trip.delivery_otp !== otp) {
@@ -108,6 +112,8 @@ export class DeliveryService {
 
   async pushTelemetry(userId: string, data: any) {
     const partner = await this.prisma.deliveryPartner.findUnique({ where: { user_id: userId } });
+    if (!partner) throw new BadRequestException('Partner not found');
+    
     await this.prisma.deliveryTelemetryLog.create({
       data: {
         driver_id: partner.id,

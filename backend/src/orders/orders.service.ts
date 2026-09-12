@@ -44,7 +44,7 @@ export class OrdersService {
           subtotal: cart.subtotal,
           delivery_fee: cart.delivery_fee,
           total_amount: cart.total_amount,
-          total_quantity_kg: cart.items.reduce((sum, i) => sum + i.quantity_kg, 0),
+          total_quantity_kg: cart.items.reduce((sum, i) => sum + Number(i.quantity_kg), 0),
           items_summary: cart.items.map(i => `${i.name} (${i.quantity_kg}kg)`),
           payment_method: paymentMethod || 'cash_on_delivery',
           payment_status: paymentMethod === 'cash_on_delivery' ? 'pending' : 'authorized',
