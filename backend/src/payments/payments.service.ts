@@ -129,6 +129,16 @@ export class PaymentsService {
           data: { escrow_status: 'released', order_status: 'completed' }
         });
 
+        // Clean up Ephemeral Storage (Drop CV images to save space)
+        if (order?.match?.contributors) {
+          for (const contributor of order.match.contributors) {
+             await tx.produceInventory.update({
+               where: { id: contributor.produce_id },
+               data: { images: [] }
+             });
+          }
+        }
+
         await tx.settlement.create({
           data: {
             order_id: orderId,
