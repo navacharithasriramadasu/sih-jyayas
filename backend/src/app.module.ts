@@ -14,6 +14,9 @@ import { HttpModule } from '@nestjs/axios';
 import { PaymentsModule } from './payments/payments.module';
 import { MarketInsightsModule } from './market-insights/market-insights.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ConsumerModule } from './consumer/consumer.module';
+import { OrdersModule } from './orders/orders.module';
+import { DeliveryModule } from './delivery/delivery.module';
 
 @Module({
   imports: [
@@ -35,6 +38,9 @@ import { ScheduleModule } from '@nestjs/schedule';
     PaymentsModule,
     MarketInsightsModule,
     ScheduleModule.forRoot(),
+    ConsumerModule,
+    OrdersModule,
+    DeliveryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
