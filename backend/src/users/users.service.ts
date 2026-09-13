@@ -42,14 +42,16 @@ export class UsersService {
         where: { user_id: id },
         create: {
           user_id: id,
-          farm_location: data.farm_location || data.location,
+          latitude: data.latitude || 17.3850,
+          longitude: data.longitude || 78.4867,
           primary_crops: data.primary_crops || [],
-          land_size_acres: data.land_size_acres,
+          land_size_acres: data.land_size_acres || 0,
         },
         update: {
-          farm_location: data.farm_location || data.location,
+          latitude: data.latitude || 17.3850,
+          longitude: data.longitude || 78.4867,
           primary_crops: data.primary_crops || [],
-          land_size_acres: data.land_size_acres,
+          land_size_acres: data.land_size_acres || 0,
         }
       });
     }
@@ -71,8 +73,9 @@ export class UsersService {
           data: {
             user_id: id,
             upi_id: data.upi_id,
-            bank_name: data.bank_name,
-            account_number: "PENDING", // Mock for MVP
+            bank_name: data.bank_name || "PENDING",
+            account_number_encrypted: "PENDING", // Mock for MVP
+            account_holder_name: data.full_name || "PENDING",
             ifsc_code: "PENDING",
             is_primary: true
           }

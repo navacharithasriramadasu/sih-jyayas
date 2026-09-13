@@ -133,7 +133,7 @@ export class ProduceService {
             source: data.pickup_address || "Local Farm",
             farmer_id: farmerId,
             quality_grade: qualityGrade,
-            image_url: (data.images && data.images.length > 0) ? data.images[0] : null
+            image_url: (Array.isArray(data.images) && data.images.length > 0) ? data.images[0] : null
           }
         });
       }
