@@ -54,7 +54,25 @@ if not os.path.exists(data_dir):
         os.makedirs(os.path.join(dest_train_dir, 'grade_A'), exist_ok=True)
         os.makedirs(os.path.join(dest_train_dir, 'grade_C'), exist_ok=True)
         
-        print("Restructuring Fresh/Rotten crops into Grade A and Grade C...")
+        # --- GRAINSET & GRAINDET INTEGRATION ---
+        # Automatically merge non-perishable datasets if the user manually downloaded them
+        for external_dataset in ['GrainDet', 'GrainSet']:
+            if os.path.exists(external_dataset):
+                print(f"Detected {external_dataset} dataset! Integrating non-perishables into grading model...")
+                for root, dirs, files in os.walk(external_dataset):
+                    for file in files:
+                        if file.lower().endswith(('.png', '.jpg', '.jpeg')):
+                            file_path = os.path.join(root, file)
+                            folder_name = os.path.basename(root).lower()
+                            
+                            # Grade A mapping: Normal, Healthy
+                            if 'normal' in folder_name or 'healthy' in folder_name:
+                                shutil.copy(file_path, os.path.join(dest_train_dir, 'grade_A', f"{external_dataset}_{folder_name}_{file}"))
+                            # Grade C mapping: Defective
+                            elif any(defect in folder_name for defect in ['broken', 'sprouted', 'pest', 'shriveled', 'impurities', 'damaged', 'unsound']):
+                                shutil.copy(file_path, os.path.join(dest_train_dir, 'grade_C', f"{external_dataset}_{folder_name}_{file}"))
+                                
+        print("Restructuring Fresh/Rotten perishables into Grade A and Grade C...")
         for crop_folder in os.listdir(source_train_dir):
             crop_path = os.path.join(source_train_dir, crop_folder)
             if os.path.isdir(crop_path):
