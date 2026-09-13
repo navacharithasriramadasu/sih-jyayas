@@ -127,9 +127,9 @@ export class ProduceService {
             category_id: category.id,
             name: `${qualityGrade === QualityGrade.gradeA ? 'Premium ' : ''}${data.crop_name}`,
             description: `Fresh ${data.crop_name} direct from farm. Quality: ${qualityGrade}.`,
-            price_per_kg: data.price_per_kg,
-            mrp_price: Number(data.price_per_kg) * 1.2, // Mock 20% markup
-            available_quantity_kg: data.quantity_kg,
+            price_per_kg: Number(data.expected_price_per_kg),
+            mrp_price: Number(data.expected_price_per_kg) * 1.2, // Mock 20% markup
+            available_quantity_kg: Number(data.total_quantity_kg),
             source: data.pickup_address || "Local Farm",
             farmer_id: farmerId,
             quality_grade: qualityGrade,

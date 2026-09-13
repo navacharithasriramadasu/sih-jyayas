@@ -28,8 +28,9 @@ export class ProduceController {
     const produceData: Omit<Prisma.ProduceInventoryCreateInput, 'farmer'> = {
       crop_name: dataObj.crop_name,
       variety: dataObj.variety || null,
-      quantity_kg: Number(dataObj.quantity_kg),
-      price_per_kg: Number(dataObj.price_per_kg),
+      total_quantity_kg: Number(dataObj.quantity_kg),
+      available_quantity_kg: Number(dataObj.quantity_kg),
+      expected_price_per_kg: Number(dataObj.price_per_kg),
       harvest_date: dataObj.harvest_date ? new Date(dataObj.harvest_date) : new Date(),
       pickup_latitude: Number(dataObj.latitude || dataObj.pickup_latitude),
       pickup_longitude: Number(dataObj.longitude || dataObj.pickup_longitude),

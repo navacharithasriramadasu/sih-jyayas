@@ -127,4 +127,22 @@ export class DeliveryService {
     });
     return { status: 'updated' };
   }
+  async getWallet(userId: string) {
+    const transactions = await this.prisma.driverPayoutLedger.findMany({
+      where: { driver_id: userId },
+      orderBy: { created_at: 'desc' }
+    });
+
+    const balance = transactions.reduce((sum, t) => {
+      return t.transaction_type === 'credit' ? sum + Number(t.amount) : sum - Number(t.amount);
+    }, 0);
+
+    return {
+      success: true,
+      data: {
+        balance: Number(balance.toFixed(2)),
+        transactions
+      }
+    };
+  }
 }

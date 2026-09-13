@@ -171,7 +171,7 @@ export class ConsumerService {
         order_type: 'consumer_retail',
         buyer_id: userId,
         total_items_count: items.length,
-        total_weight_kg: items.reduce((sum, item) => sum + item.quantity_kg, 0),
+        total_weight_kg: items.reduce((sum: number, item: any) => sum + Number(item.quantity_kg), 0),
         subtotal_amount: subtotal,
         logistics_fee: delivery_fee,
         total_amount: total_amount,
