@@ -20,7 +20,7 @@ export class ProduceService {
       throw new Error("At least one image is required for assessment.");
     }
 
-    let qualityGrade = QualityGrade.pending;
+    let qualityGrade: QualityGrade = QualityGrade.pending;
     let qualityScore = 85.0; // fallback
     let confidenceScore = 90.0;
 
@@ -61,7 +61,7 @@ export class ProduceService {
   }
 
   async create(farmerId: string, data: Omit<Prisma.ProduceInventoryCreateInput, 'farmer'>) {
-    let qualityGrade = QualityGrade.pending;
+    let qualityGrade: QualityGrade = QualityGrade.pending;
     let qualityScore = 85.0; // default fallback
 
     // If assessment_id is provided, pull the grade from the draft
