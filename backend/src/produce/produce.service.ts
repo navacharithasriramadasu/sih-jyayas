@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, QualityGrade, DraftStatus } from '@prisma/client';
 import { EventsGateway } from '../events/events.gateway';
 import { AiService } from '../ai/ai.service';
 import { HttpService } from '@nestjs/axios';
@@ -20,7 +20,7 @@ export class ProduceService {
       throw new Error("At least one image is required for assessment.");
     }
 
-    let qualityGrade = Prisma.QualityGrade.pending;
+    let qualityGrade = QualityGrade.pending;
     let qualityScore = 85.0; // fallback
     let confidenceScore = 90.0;
 
@@ -35,9 +35,9 @@ export class ProduceService {
       
       const cvData = cvResponse.data;
       if (cvData && cvData.grade) {
-        qualityGrade = cvData.grade === 'A' ? Prisma.QualityGrade.gradeA : 
-                       cvData.grade === 'B' ? Prisma.QualityGrade.gradeB : 
-                       Prisma.QualityGrade.gradeC;
+        qualityGrade = cvData.grade === 'A' ? QualityGrade.gradeA : 
+                       cvData.grade === 'B' ? QualityGrade.gradeB : 
+                       QualityGrade.gradeC;
         qualityScore = Math.max(0, 100 - (cvData.average_defect_percentage * 2));
       }
     } catch (e) {
@@ -53,7 +53,7 @@ export class ProduceService {
         predicted_grade: qualityGrade,
         quality_score: qualityScore,
         confidence_score: confidenceScore,
-        status: Prisma.DraftStatus.draft
+        status: DraftStatus.draft
       }
     });
 
@@ -61,7 +61,7 @@ export class ProduceService {
   }
 
   async create(farmerId: string, data: Omit<Prisma.ProduceInventoryCreateInput, 'farmer'>) {
-    let qualityGrade = Prisma.QualityGrade.pending;
+    let qualityGrade = QualityGrade.pending;
     let qualityScore = 85.0; // default fallback
 
     // If assessment_id is provided, pull the grade from the draft
@@ -77,10 +77,10 @@ export class ProduceService {
         // Mark draft as listed
         await this.prisma.qualityAssessmentDraft.update({
           where: { id: draft.id },
-          data: { status: Prisma.DraftStatus.listed }
+          data: { status: DraftStatus.listed }
         });
       }
-    } else if (data.images && data.images.length >= 3) {
+    } else if (data.images && Array.isArray(data.images) && data.images.length >= 3) {
       // Legacy flow without explicit assessment drafting
       try {
         const aiServiceUrl = process.env.CV_AI_SERVICE_URL || 'http://localhost:8001';
@@ -92,9 +92,9 @@ export class ProduceService {
         );
         const cvData = cvResponse.data;
         if (cvData && cvData.grade) {
-          qualityGrade = cvData.grade === 'A' ? Prisma.QualityGrade.gradeA : 
-                         cvData.grade === 'B' ? Prisma.QualityGrade.gradeB : 
-                         Prisma.QualityGrade.gradeC;
+          qualityGrade = cvData.grade === 'A' ? QualityGrade.gradeA : 
+                         cvData.grade === 'B' ? QualityGrade.gradeB : 
+                         QualityGrade.gradeC;
           qualityScore = Math.max(0, 100 - (cvData.average_defect_percentage * 2));
         }
       } catch (e) {
