@@ -45,6 +45,7 @@ model User {
   settlements        Settlement[]
   trips_driven       LogisticsTrip[]
   trip_stops         TripStop[]
+  quality_assessments QualityAssessmentDraft[]
 
   // B2C & Delivery Relations
   consumer_products    ConsumerProduct[]
@@ -132,6 +133,26 @@ enum QualityGrade {
   pending
 }
 
+enum DraftStatus {
+  draft
+  listed
+}
+
+model QualityAssessmentDraft {
+  id               String       @id @default(uuid()) @db.Uuid
+  farmer_id        String       @db.Uuid
+  crop_type        String       @default("perishable") @db.VarChar(50)
+  images           String[]     // Base64 or Object Storage URLs (Neon compatibility)
+  predicted_grade  QualityGrade
+  quality_score    Decimal      @db.Decimal(5, 2)
+  confidence_score Decimal      @db.Decimal(5, 2)
+  status           DraftStatus  @default(draft)
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @default(now()) @updatedAt
+
+  farmer           User         @relation(fields: [farmer_id], references: [id])
+}
+
 enum ProduceStatus {
   available
   locked_in_match
@@ -159,6 +180,7 @@ model ProduceInventory {
   pickup_longitude      Decimal                     @db.Decimal(11, 8)
   pickup_address        String                      @db.Text
   status                ProduceStatus               @default(available)
+  assessment_id         String?                     @db.Uuid
   embedding             Unsupported("vector(384)")?
   created_at            DateTime                    @default(now())
 

@@ -34,4 +34,32 @@ services:
         sync: false
       - key: TWILIO_PHONE_NUMBER
         sync: false
+      - key: CV_AI_SERVICE_URL
+        value: "https://agriconnect-cv-ai.onrender.com"
+      - key: VOICE_AI_SERVICE_URL
+        value: "https://agriconnect-voice-ai.onrender.com"
     autoDeploy: true
+
+  - type: web
+    name: agriconnect-voice-ai
+    env: python
+    region: singapore
+    plan: free
+    rootDir: ai-service
+    buildCommand: "wget https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip && unzip -o vosk-model-small-en-us-0.15.zip && mv vosk-model-small-en-us-0.15 model_en && rm vosk-model-small-en-us-0.15.zip && pip install -r requirements.txt"
+    startCommand: "uvicorn voice_app:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+  - type: web
+    name: agriconnect-cv-ai
+    env: python
+    region: singapore
+    plan: free
+    rootDir: ai-service
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn cv_app:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0

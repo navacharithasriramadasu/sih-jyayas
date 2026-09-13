@@ -17,6 +17,13 @@ export class ProduceController {
     return this.produceService.create(body.farmer_id, body.data);
   }
 
+  @Post('assess')
+  assessQuality(
+    @Body() body: { farmer_id: string; images: string[]; crop_type?: string }
+  ) {
+    return this.produceService.assessQuality(body.farmer_id, body.images, body.crop_type);
+  }
+
   @Get('farmer/:farmerId')
   findAllByFarmer(@Param('farmerId') farmerId: string) {
     return this.produceService.findAllByFarmer(farmerId);
