@@ -35,37 +35,42 @@ if not os.path.exists(data_dir):
     # (Ants and Bees) just to prove the CNN trains successfully. 
     # Once you add your Kaggle key to Colab, replace the URL below with the Kaggle command!
     
-    url = "https://download.pytorch.org/tutorial/hymenoptera_data.zip"
-    zip_path = os.path.join(data_dir, "dataset.zip")
-    
-    import urllib.request
-    import zipfile
-    import shutil
-    import requests
-    
     try:
-        # STREAMING DOWNLOAD: Downloads 1GB+ datasets in 8KB chunks to prevent RAM crashes
-        print(f"Starting chunked download from {url}...")
-        with requests.get(url, stream=True) as r:
-            r.raise_for_status()
-            with open(zip_path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-                    
-        print("Download complete! Extracting images to disk...")
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(data_dir)
+        import kagglehub
+        
+        print("Downloading Universal Produce Dataset (Fresh/Rotten) via KaggleHub...")
+        # Download latest version of the generic fresh/rotten fruits and vegetables dataset
+        path = kagglehub.dataset_download("sriramr/fruits-fresh-and-rotten-for-classification")
+        print(f"Dataset downloaded to: {path}")
+        
+        # The dataset has a 'dataset/train' folder inside it with 'freshapples', 'rottenapples', etc.
+        source_train_dir = os.path.join(path, "dataset", "train")
+        dest_train_dir = os.path.join(data_dir, "train")
+        
+        # Clean up destination if it exists
+        if os.path.exists(dest_train_dir):
+            shutil.rmtree(dest_train_dir)
             
-        print("Dataset downloaded! Restructuring into Grade A, B, C folders...")
-        os.makedirs(os.path.join(data_dir, 'train'), exist_ok=True)
+        os.makedirs(os.path.join(dest_train_dir, 'grade_A'), exist_ok=True)
+        os.makedirs(os.path.join(dest_train_dir, 'grade_C'), exist_ok=True)
         
-        # PROXY MAPPING: We map Ants to Grade A, Bees to Grade B for testing the pipeline
-        shutil.move(os.path.join(data_dir, 'hymenoptera_data', 'train', 'ants'), os.path.join(data_dir, 'train', 'grade_A'))
-        shutil.move(os.path.join(data_dir, 'hymenoptera_data', 'train', 'bees'), os.path.join(data_dir, 'train', 'grade_B'))
+        print("Restructuring Fresh/Rotten crops into Grade A and Grade C...")
+        for crop_folder in os.listdir(source_train_dir):
+            crop_path = os.path.join(source_train_dir, crop_folder)
+            if os.path.isdir(crop_path):
+                if crop_folder.startswith("fresh"):
+                    # Move all fresh produce to grade_A
+                    for img in os.listdir(crop_path):
+                        shutil.copy(os.path.join(crop_path, img), os.path.join(dest_train_dir, 'grade_A', f"{crop_folder}_{img}"))
+                elif crop_folder.startswith("rotten") or crop_folder.startswith("stale"):
+                    # Move all rotten/stale produce to grade_C
+                    for img in os.listdir(crop_path):
+                        shutil.copy(os.path.join(crop_path, img), os.path.join(dest_train_dir, 'grade_C', f"{crop_folder}_{img}"))
         
-        # Duplicate B to C just to fulfill the 3-class requirement for the neural network
-        shutil.copytree(os.path.join(data_dir, 'train', 'grade_B'), os.path.join(data_dir, 'train', 'grade_C'))
-        print("Dataset ready!")
+        # Duplicate Grade A to Grade B so the 3-class CNN architecture doesn't break
+        print("Generating Grade B proxy data...")
+        shutil.copytree(os.path.join(dest_train_dir, 'grade_A'), os.path.join(dest_train_dir, 'grade_B'), dirs_exist_ok=True)
+        print("Dataset restructuring complete and ready for training!")
     except Exception as e:
         print(f"Download failed. Generating mock images for testing... Error: {e}")
         from PIL import Image
