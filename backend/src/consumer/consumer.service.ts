@@ -162,7 +162,8 @@ export class ConsumerService {
       throw new BadRequestException("Cart is empty");
     }
 
-    const { items, subtotal, delivery_fee, total_amount } = cartResp.data;
+    const items: any[] = cartResp.data.items;
+    const { subtotal, delivery_fee, total_amount } = cartResp.data;
 
     // 2. Mock Order Creation (Integration with Payments/Delivery modules expected later)
     const order = await this.prisma.order.create({
