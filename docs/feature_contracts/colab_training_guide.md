@@ -19,6 +19,7 @@ from torch.utils.data import DataLoader
 import os
 import urllib.request
 import zipfile
+import shutil
 
 # 1. Download Real Agricultural Dataset (Kaggle Tomato Quality)
 data_dir = "./dataset"
