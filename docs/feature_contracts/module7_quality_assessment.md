@@ -1,4 +1,4 @@
-# Frontend Feature Contract: Module 4 (Quality Assessment)
+# Frontend Feature Contract: Module 7 (Quality Assessment)
 
 This contract defines exactly how the Mobile/Web Frontend should integrate with the NestJS Backend to process automated AI quality grading. 
 
