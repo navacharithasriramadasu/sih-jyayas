@@ -43,4 +43,17 @@ export class ConsumerController {
     const userId = req.user?.id || 'd3099955-fbe0-4cd9-bc20-94d35eb99411';
     return this.consumerService.getAddresses(userId);
   }
+
+  @Post('orders/create')
+  createOrder(@Request() req: any, @Body() body: any) {
+    const userId = req.user?.id || 'd3099955-fbe0-4cd9-bc20-94d35eb99411';
+    // Forward to orders module or handle directly in consumer service for MVP
+    return this.consumerService.createOrder(userId, body);
+  }
+
+  @Get('orders')
+  getOrders(@Request() req: any) {
+    const userId = req.user?.id || 'd3099955-fbe0-4cd9-bc20-94d35eb99411';
+    return this.consumerService.getOrders(userId);
+  }
 }

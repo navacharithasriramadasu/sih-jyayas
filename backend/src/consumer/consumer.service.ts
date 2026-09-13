@@ -151,4 +151,62 @@ export class ConsumerService {
     const addrs = await this.prisma.consumerAddress.findMany({ where: { user_id: userId } });
     return { success: true, data: addrs };
   }
+
+  // ==========================================
+  // ORDERS & CHECKOUT
+  // ==========================================
+  async createOrder(userId: string, body: any) {
+    // 1. Get Cart
+    const cartResp = await this.getCart(userId);
+    if (!cartResp.success || cartResp.data.items.length === 0) {
+      throw new BadRequestException("Cart is empty");
+    }
+
+    const { items, subtotal, delivery_fee, total_amount } = cartResp.data;
+
+    // 2. Mock Order Creation (Integration with Payments/Delivery modules expected later)
+    const order = await this.prisma.order.create({
+      data: {
+        order_number: `ORD-${Date.now()}`,
+        order_type: 'consumer_retail',
+        buyer_id: userId,
+        total_items_count: items.length,
+        total_weight_kg: items.reduce((sum, item) => sum + item.quantity_kg, 0),
+        subtotal_amount: subtotal,
+        logistics_fee: delivery_fee,
+        total_amount: total_amount,
+        delivery_address: body.delivery_address || 'Default Address',
+        delivery_latitude: body.delivery_latitude || 17.3850,
+        delivery_longitude: body.delivery_longitude || 78.4867,
+        order_status: 'pending', // Awaiting payment
+        escrow_status: 'held_in_escrow'
+      }
+    });
+
+    // Generate 6-digit OTP for delivery verification
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 3. Clear Cart
+    await this.clearCart(userId);
+
+    return {
+      success: true,
+      message: 'Order created successfully',
+      data: {
+        order_id: order.id,
+        order_number: order.order_number,
+        total_amount: order.total_amount,
+        delivery_otp: otp
+      }
+    };
+  }
+
+  async getOrders(userId: string) {
+    const orders = await this.prisma.order.findMany({
+      where: { buyer_id: userId, order_type: 'consumer_retail' },
+      orderBy: { created_at: 'desc' }
+    });
+
+    return { success: true, data: orders };
+  }
 }

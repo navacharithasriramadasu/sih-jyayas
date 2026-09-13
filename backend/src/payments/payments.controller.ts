@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Param } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 
-@Controller('payments')
+@Controller('api/v1/payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
@@ -10,9 +10,10 @@ export class PaymentsController {
     return this.paymentsService.processAdvance(orderId);
   }
 
-  @Post('escrow/:orderId/verify-delivery')
-  async verifyDelivery(
-    @Param('orderId') orderId: string,
+  // Frontend contract requires /escrow/release
+  @Post('escrow/release')
+  async releaseEscrow(
+    @Body('orderId') orderId: string,
     @Body('otpCode') otpCode: string,
   ) {
     return this.paymentsService.verifyDeliveryOtp(orderId, otpCode);

@@ -51,4 +51,10 @@ export class DeliveryController {
     const userId = req.user?.id || 'd3099955-fbe0-4cd9-bc20-94d35eb99411';
     return this.deliveryService.pushTelemetry(userId, body);
   }
+
+  @Get('wallet')
+  getWallet(@Request() req: any) {
+    const userId = req.user?.id || 'd3099955-fbe0-4cd9-bc20-94d35eb99411';
+    return this.deliveryService.getWallet(userId);
+  }
 }

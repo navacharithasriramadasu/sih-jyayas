@@ -2,7 +2,7 @@ import { Controller, Get, Query, ValidationPipe } from '@nestjs/common';
 import { MatchingService } from './matching.service';
 import { FindMatchesDto } from './dto/find-matches.dto';
 
-@Controller('api/matching')
+@Controller('api/v1/matching')
 export class MatchingController {
   constructor(private readonly matchingService: MatchingService) {}
 

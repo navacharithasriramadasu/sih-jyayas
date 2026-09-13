@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, Headers } from '@nestjs/common';
 import { ProduceService } from './produce.service';
 import { Prisma } from '@prisma/client';
 
@@ -7,14 +7,38 @@ export class ProduceController {
   constructor(private readonly produceService: ProduceService) {}
 
   @Post()
-  create(
-    @Body()
-    body: {
-      farmer_id: string;
-      data: Omit<Prisma.ProduceInventoryCreateInput, 'farmer'>;
-    },
+  async create(
+    @Headers('authorization') auth: string,
+    @Body() body: any,
   ) {
-    return this.produceService.create(body.farmer_id, body.data);
+    // 1. Extract Farmer ID from body or JWT
+    let farmerId = body.farmer_id;
+    if (!farmerId && auth) {
+      const token = auth.split(' ')[1];
+      // Simple base64 decode for MVP (in prod use JwtService)
+      try {
+        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+        farmerId = payload.sub;
+      } catch (e) {}
+    }
+    if (!farmerId) throw new Error("Unauthorized: farmer_id required");
+
+    // 2. Map flat or nested payload to Prisma Input
+    const dataObj = body.data || body;
+    const produceData: Omit<Prisma.ProduceInventoryCreateInput, 'farmer'> = {
+      crop_name: dataObj.crop_name,
+      variety: dataObj.variety || null,
+      quantity_kg: Number(dataObj.quantity_kg),
+      price_per_kg: Number(dataObj.price_per_kg),
+      harvest_date: dataObj.harvest_date ? new Date(dataObj.harvest_date) : new Date(),
+      pickup_latitude: Number(dataObj.latitude || dataObj.pickup_latitude),
+      pickup_longitude: Number(dataObj.longitude || dataObj.pickup_longitude),
+      pickup_address: dataObj.location || dataObj.pickup_address || "Farm",
+      assessment_id: dataObj.assessment_id,
+      images: dataObj.images || [],
+    };
+
+    return this.produceService.create(farmerId, produceData);
   }
 
   @Post('assess')
@@ -22,6 +46,25 @@ export class ProduceController {
     @Body() body: { farmer_id: string; images: string[]; crop_type?: string }
   ) {
     return this.produceService.assessQuality(body.farmer_id, body.images, body.crop_type);
+  }
+
+  @Get()
+  async findAllForActiveUser(@Headers('authorization') auth: string) {
+    if (!auth) throw new Error("Unauthorized");
+    const token = auth.split(' ')[1];
+    let farmerId = null;
+    try {
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      farmerId = payload.sub;
+    } catch (e) {}
+    
+    if (!farmerId) throw new Error("Invalid token");
+
+    const listings = await this.produceService.findAllByFarmer(farmerId);
+    return {
+      success: true,
+      data: listings
+    };
   }
 
   @Get('farmer/:farmerId')

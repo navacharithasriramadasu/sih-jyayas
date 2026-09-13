@@ -111,6 +111,36 @@ export class ProduceService {
       },
     });
 
+    // 4. Automated Sync Trigger: Insert into consumer_products for E-Commerce Module
+    try {
+      // Find a matching consumer category or use a default one
+      let category = await this.prisma.consumerCategory.findFirst({
+        where: { name: { contains: data.crop_name, mode: 'insensitive' } }
+      });
+      if (!category) {
+        category = await this.prisma.consumerCategory.findFirst(); // Fallback
+      }
+
+      if (category) {
+        await this.prisma.consumerProduct.create({
+          data: {
+            category_id: category.id,
+            name: `${qualityGrade === QualityGrade.gradeA ? 'Premium ' : ''}${data.crop_name}`,
+            description: `Fresh ${data.crop_name} direct from farm. Quality: ${qualityGrade}.`,
+            price_per_kg: data.price_per_kg,
+            mrp_price: Number(data.price_per_kg) * 1.2, // Mock 20% markup
+            available_quantity_kg: data.quantity_kg,
+            source: data.pickup_address || "Local Farm",
+            farmer_id: farmerId,
+            quality_grade: qualityGrade,
+            image_url: (data.images && data.images.length > 0) ? data.images[0] : null
+          }
+        });
+      }
+    } catch (e) {
+      console.error("Failed to sync to consumer_products", e);
+    }
+
     try {
       // 1. Generate semantic embedding string (e.g. "Tomato Hybrid Roma 20.00 Maharashtra")
       const textToEmbed = `${data.crop_name} ${data.variety} ${data.expected_price_per_kg} ${data.pickup_address}`;
